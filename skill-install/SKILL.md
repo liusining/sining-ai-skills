@@ -45,15 +45,25 @@ If unclear, stop and ask.
 
 ### C) Input is a GitHub URL
 
-1. Clone to `/tmp/<repo-name>` as a temporary staging directory.
-2. Locate the skill folder — the directory containing `SKILL.md`:
-   - If `SKILL.md` is at the repo root, the skill folder is the repo root itself.
-   - If `SKILL.md` is nested (e.g. `sub-dir/SKILL.md`), the skill folder is that subdirectory.
-   - If multiple `SKILL.md` files exist, ask user which one.
-3. Read frontmatter `name` from `SKILL.md` and use it as destination folder name.
-4. Run skill-guard scan on the skill folder (see safety gate below).
-5. If scan passes, copy the skill folder into `<workdir>/skills/<name>`.
-6. Clean up the `/tmp/<repo-name>` staging directory.
+1. Parse the URL to extract repo, ref (branch/tag/commit), and subdirectory path:
+   - `https://github.com/owner/repo` — full repo, default branch
+   - `https://github.com/owner/repo/tree/v4.3.1/skills/my-skill` — specific ref (`v4.3.1`) and subdirectory (`skills/my-skill`)
+   - `https://github.com/owner/repo/tree/main/skills/my-skill` — specific branch and subdirectory
+2. Clone to `/tmp/<repo-name>`, checking out the specific ref if present:
+   ```bash
+   git clone --branch <ref> --depth 1 <repo-url> /tmp/<repo-name>
+   ```
+   If no ref is specified, clone the default branch.
+3. Locate the skill folder:
+   - If the URL includes a subdirectory path, use that path directly as the skill folder.
+   - Otherwise, find the directory containing `SKILL.md`:
+     - If `SKILL.md` is at the repo root, the skill folder is the repo root itself.
+     - If `SKILL.md` is nested, the skill folder is that subdirectory.
+     - If multiple `SKILL.md` files exist, ask user which one.
+4. Read frontmatter `name` from `SKILL.md` and use it as destination folder name.
+5. Run skill-guard scan on the skill folder (see safety gate below).
+6. If scan passes, copy the skill folder into `<workdir>/skills/<name>`.
+7. Clean up the `/tmp/<repo-name>` staging directory.
 
 ### D) Input is a local file path
 
@@ -68,7 +78,8 @@ If unclear, stop and ask.
 
 ### E) Input is any other URL
 
-1. Fetch the page content.
+1. **Ask the user to confirm they trust the content at this URL before proceeding.**
+2. Fetch the page content.
 2. Read the page for installation instructions or a link to the skill source.
 3. If the page links to a GitHub repo or ClawHub slug, fall back to the matching flow above (A/B/C).
 4. If the page provides a direct download (zip, tar), download to `/tmp/` and extract. Locate the `SKILL.md` inside and treat as a staged skill — run skill-guard scan before copying to destination.
