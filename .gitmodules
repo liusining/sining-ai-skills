@@ -1,0 +1,3 @@
+[submodule "agent-create/reference/openclaw"]
+	path = agent-create/reference/openclaw
+	url = https://github.com/openclaw/openclaw.git
