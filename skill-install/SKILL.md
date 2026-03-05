@@ -1,6 +1,6 @@
 ---
 name: skill-install
-description: Install OpenClaw skills safely from a skill name, ClawHub URL, or GitHub URL. Use when a user asks to add/update skills and choose install scope (shared all agents, current agent, or a specific agent). Ask for source + target scope, then run skill-guard before final install.
+description: Use when a user asks to install, add, or update an OpenClaw skill.
 ---
 
 # Skill Install
@@ -10,14 +10,16 @@ Install skills with a consistent, safety-first workflow.
 ## Required questions
 
 Ask the user two things before installing:
-1. **What skill to install?**
-   - plain name (example: `skill-guard`)
+1. **What is the source?**
+   - plain name (example: `skill-guard`) — searched on ClawHub
    - ClawHub URL
    - GitHub URL
-2. **Where to install?**
-   - shared for all agents
-   - current agent only
-   - a specific agent
+   - local file path — a skill directory on disk (e.g. `~/projects/my-skill`)
+   - any other URL — agent fetches the page and follows installation instructions found there
+2. **What install scope?**
+   - **shared** — available to all agents on this machine
+   - **current agent** — only the agent running in the current workspace
+   - **a separate agent** — a different agent instance identified by its agent ID
 
 If unclear, stop and ask.
 
@@ -27,73 +29,92 @@ If unclear, stop and ask.
 
 1. Search ClawHub: `clawhub search "<query>"`
 2. Pick top candidate slug(s) and confirm with user before install.
-3. Use confirmed slug for install.
+3. Stage to a temporary directory for scanning before install:
+   ```bash
+   clawhub --workdir /tmp/clawhub-staging install <slug>
+   ```
+4. Run skill-guard scan on `/tmp/clawhub-staging/skills/<slug>` (see safety gate below).
+5. If scan passes, copy into `<workdir>/skills/<name>` and clean up staging.
 
 ### B) Input is a ClawHub URL
 
 1. Extract slug from URL path (last segment).
 2. Optionally verify metadata with `clawhub inspect <slug>`.
 3. Confirm extracted slug with user if ambiguous.
+4. Stage, scan, and install using the same steps as flow A (steps 3–5).
 
 ### C) Input is a GitHub URL
 
-1. Clone to temporary staging directory.
-2. Locate target skill folder containing `SKILL.md`.
-   - If multiple matches exist, ask user which one.
-3. Read frontmatter `name` and use it as destination folder name.
+1. Clone to `/tmp/<repo-name>` as a temporary staging directory.
+2. Locate the skill folder — the directory containing `SKILL.md`:
+   - If `SKILL.md` is at the repo root, the skill folder is the repo root itself.
+   - If `SKILL.md` is nested (e.g. `sub-dir/SKILL.md`), the skill folder is that subdirectory.
+   - If multiple `SKILL.md` files exist, ask user which one.
+3. Read frontmatter `name` from `SKILL.md` and use it as destination folder name.
+4. Run skill-guard scan on the skill folder (see safety gate below).
+5. If scan passes, copy the skill folder into `<workdir>/skills/<name>`.
+6. Clean up the `/tmp/<repo-name>` staging directory.
+
+### D) Input is a local file path
+
+1. Verify the path exists and contains a `SKILL.md`.
+2. Read frontmatter `name` from `SKILL.md` and use it as the destination folder name.
+3. Run skill-guard scan on the local folder (see safety gate below).
+4. If scan passes, create a **symlink** using the absolute path to the source:
+   ```bash
+   ln -s /absolute/path/to/source <workdir>/skills/<name>
+   ```
+   Always expand `~` to the full absolute path. This avoids duplicating files and keeps the local development copy as the single source of truth.
+
+### E) Input is any other URL
+
+1. Fetch the page content.
+2. Read the page for installation instructions or a link to the skill source.
+3. If the page links to a GitHub repo or ClawHub slug, fall back to the matching flow above (A/B/C).
+4. If the page provides a direct download (zip, tar), download to `/tmp/` and extract. Locate the `SKILL.md` inside and treat as a staged skill — run skill-guard scan before copying to destination.
+5. If no clear instructions exist, report to user and ask how to proceed.
 
 ## Resolve install scope (target workdir)
 
-- **Shared (all agents):** `~/.openclaw`
-- **Current agent:** current workspace path
-- **Specific agent:**
+- **Shared (all agents):** `~/.openclaw` — skill is available to every agent on this machine
+- **Current agent:** the working directory of the current agent session (typically the project root, e.g. the output of `pwd` in the agent's shell)
+- **A separate agent:** a different agent instance, identified by agent ID
   - `main` → `~/.openclaw/workspace`
-  - others → `~/.openclaw/workspace-<agentId>` (verify path exists)
+  - others → `~/.openclaw/workspace-<agentId>`
+  - If the workspace path does not exist, **stop and report the error** to the user. Do not create it — the agent ID may be wrong. Ask the user to confirm the agent ID or list known agents.
 
 Install destination is always `<workdir>/skills/<skill-name>`.
 
 ## Mandatory safety gate: skill-guard
 
-Before final install, run **skill-guard**.
+Before final install, follow **skill-guard** skill to scan the skill for threats.
 
-### Ensure skill-guard is available (shared)
+**REQUIRED SUB-SKILL:** Use `skill-guard` for the scanning workflow.
 
-```bash
-clawhub --workdir ~/.openclaw install skill-guard --force
-```
+### Ensure skill-guard is available
 
-### For ClawHub installs (name or ClawHub URL)
+1. Check if skill-guard is already installed:
+   ```bash
+   ls ~/.openclaw/skills/skill-guard/SKILL.md
+   ```
+2. If not found, install it:
+   ```bash
+   clawhub --workdir ~/.openclaw install skill-guard
+   ```
 
-Use skill-guard wrapper (pre-install scan + install on pass):
+### Run the safety scan
 
-```bash
-CLAWHUB_WORKDIR="<target-workdir>" \
-~/.openclaw/skills/skill-guard/scripts/safe-install.sh <slug> [--version X.Y.Z] [--force]
-```
+Invoke skill-guard on the skill to be installed. skill-guard's own SKILL.md defines the scanning procedure — follow it.
 
-Handle results:
-- exit `0`: clean, installed
-- exit `2`: threats found, do **not** auto-install; ask user whether to stop or manually override
-- exit `1`: operational failure; report error
-
-### For GitHub installs
-
-1. Stage repository files in `/tmp`.
-2. Run scanner directly on staged skill folder:
-
-```bash
-uvx mcp-scan@latest --skills <staged-skill-folder>
-```
-
-3. If scanner flags risks, stop and ask user whether to continue.
-4. If clean, copy staged folder into `<target-workdir>/skills/<name>`.
+If threats are found, do **not** auto-install. Ask user whether to stop or manually override.
 
 ## Install execution details
 
 - Create destination skills directory if missing.
 - If destination already exists, ask whether to overwrite (or use `--force` when already approved).
 - Keep folder structure valid (`<skill>/SKILL.md` required).
-- Avoid symlinks for packaged/distributable reliability.
+- **Local sources:** use symlinks (see section D above).
+- **Remote sources:** copy files directly — avoid symlinks for portability.
 
 ## Post-install checks
 
