@@ -14,8 +14,8 @@ Ask the user two things before installing:
    - plain name (example: `skill-guard`) — searched on ClawHub
    - ClawHub URL
    - GitHub URL
-   - local file path — a skill directory on disk (e.g. `~/projects/my-skill`)
-   - any other URL — agent fetches the page and follows installation instructions found there
+   - local file path — a skill directory on disk (e.g. `~/projects/my-skill`). Local skill store paths are listed in `local-skill-store.md` (if it exists) in the workspace root — check there first before asking the user for an accurate path.
+
 2. **What install scope?**
    - **shared** — available to all agents on this machine
    - **current agent** — only the agent running in the current workspace
@@ -75,15 +75,6 @@ If unclear, stop and ask.
    ln -s /absolute/path/to/source <workdir>/skills/<name>
    ```
    Always expand `~` to the full absolute path. This avoids duplicating files and keeps the local development copy as the single source of truth.
-
-### E) Input is any other URL
-
-1. **Ask the user to confirm they trust the content at this URL before proceeding.**
-2. Fetch the page content.
-2. Read the page for installation instructions or a link to the skill source.
-3. If the page links to a GitHub repo or ClawHub slug, fall back to the matching flow above (A/B/C).
-4. If the page provides a direct download (zip, tar), download to `/tmp/` and extract. Locate the `SKILL.md` inside and treat as a staged skill — run skill-guard scan before copying to destination.
-5. If no clear instructions exist, report to user and ask how to proceed.
 
 ## Resolve install scope (target workdir)
 
