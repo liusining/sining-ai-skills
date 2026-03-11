@@ -68,9 +68,17 @@ If unclear, stop and ask.
 ### D) Input is a local file path
 
 1. Verify the path exists and contains a `SKILL.md`.
-2. Read frontmatter `name` from `SKILL.md` and use it as the destination folder name.
-3. Run skill-guard scan on the local folder (see safety gate below).
-4. If scan passes, create a **symlink** using the absolute path to the source:
+2. **If the directory contains a `.git` repo, pull latest changes first:**
+   ```bash
+   cd /path/to/skill && git pull
+   ```
+   Also initialize/update submodules if any exist:
+   ```bash
+   git submodule update --init --recursive
+   ```
+3. Read frontmatter `name` from `SKILL.md` and use it as the destination folder name.
+4. Run skill-guard scan on the local folder (see safety gate below).
+5. If scan passes, create a **symlink** using the absolute path to the source:
    ```bash
    ln -s /absolute/path/to/source <workdir>/skills/<name>
    ```
