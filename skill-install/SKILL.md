@@ -68,12 +68,14 @@ If unclear, stop and ask.
 ### D) Input is a local file path
 
 1. Verify the path exists and contains a `SKILL.md`.
-2. **If the directory contains a `.git` repo, pull latest changes first:**
+2. **If the directory is inside a git repo, pull latest changes first.**
+   Check with `git status`:
    ```bash
-   cd /path/to/skill && git pull
+   cd /path/to/skill && git status
    ```
-   Also initialize/update submodules if any exist:
+   If this succeeds (exit code 0), the directory is git-tracked. Pull latest:
    ```bash
+   git pull
    git submodule update --init --recursive
    ```
 3. Read frontmatter `name` from `SKILL.md` and use it as the destination folder name.
