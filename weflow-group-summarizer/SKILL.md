@@ -8,7 +8,7 @@ description: Use when user asks to monitor WeChat groups, set up WeFlow API acce
 设置和运行 WeChat 群聊定期总结。所有脚本和配置都在此技能目录下（`<skill_dir>` 即本 SKILL.md 所在目录）。
 
 **前置条件：**
-- WeFlow 桌面端已在运行，且 API 服务已启用（设置页面 → API 服务 → 启动服务）
+- [WeFlow 桌面端](https://github.com/hicccc77/WeFlow)已在运行，且 API 服务已启用（设置页面 → API 服务 → 启动服务）
 - Python 3 已安装
 - 安装依赖：`pip install pyyaml openpyxl`
 
