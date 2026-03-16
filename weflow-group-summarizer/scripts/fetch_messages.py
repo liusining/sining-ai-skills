@@ -39,9 +39,11 @@ def fetch_messages(host, talker):
         return json.loads(resp.read())
 
 
-def download_image(media_url, save_dir):
+def download_image(media_url, save_dir, local_id):
     os.makedirs(save_dir, exist_ok=True)
-    filename = media_url.rsplit("/", 1)[-1]
+    original_name = media_url.rsplit("/", 1)[-1]
+    ext = os.path.splitext(original_name)[1] or ".jpg"
+    filename = f"{local_id}{ext}"
     save_path = os.path.join(save_dir, filename)
     if os.path.exists(save_path):
         return save_path
@@ -110,7 +112,7 @@ def process_group(host, group, images_dir):
         if msg.get("mediaType") == "image" and msg.get("mediaUrl"):
             img_path = None
             if img_dir:
-                img_path = download_image(msg["mediaUrl"], img_dir)
+                img_path = download_image(msg["mediaUrl"], img_dir, msg.get("localId", 0))
             if img_path:
                 content = f"[图片] {os.path.abspath(img_path)}"
             else:
