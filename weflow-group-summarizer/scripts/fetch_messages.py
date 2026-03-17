@@ -58,8 +58,8 @@ def download_image(media_url, save_dir, local_id):
         return None
 
 
-def format_time(timestamp_ms):
-    dt = datetime.fromtimestamp(timestamp_ms / 1000)
+def format_time(timestamp):
+    dt = datetime.fromtimestamp(timestamp)
     return dt.strftime("[%Y-%m-%d %H:%M]")
 
 
