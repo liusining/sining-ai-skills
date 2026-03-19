@@ -1,0 +1,5 @@
+{
+  "name": "snell-surge-deploy",
+  "description": "Deploy Snell proxy server on a Linux VPS and configure a local Surge profile to connect through it.",
+  "keywords": ["snell", "surge", "proxy", "vps", "deployment"]
+}
