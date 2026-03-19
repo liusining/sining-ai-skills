@@ -248,6 +248,16 @@ def update_note_frontmatter(note_path: Path, updates: dict) -> None:
 
 # ── cmd: init ────────────────────────────────────────────────────────
 
+def _board_has_headings(board_path: Path) -> bool:
+    """Return True if the board markdown contains any ## headings."""
+    if not board_path.exists():
+        return False
+    for line in board_path.read_text(encoding="utf-8").splitlines():
+        if re.match(r"^##\s+", line):
+            return True
+    return False
+
+
 def cmd_init(args):
     """Validate board and create config file."""
     cfg_path = Path(args.config).resolve()
@@ -260,7 +270,40 @@ def cmd_init(args):
 
     board = Path(args.board).resolve()
     notes = Path(args.notes_folder).resolve()
-    template = Path(args.template).resolve()
+    tmpl_dir = Path(args.template_dir).resolve()
+
+    # ── Locate templates in the template directory ──
+    if not tmpl_dir.is_dir():
+        print(f"Error: template directory not found: {tmpl_dir}",
+              file=sys.stderr)
+        sys.exit(1)
+
+    note_template = tmpl_dir / "note-template.md"
+    board_template = tmpl_dir / "board-template.md"
+
+    if not note_template.exists():
+        print(f"Error: note-template.md not found in {tmpl_dir}",
+              file=sys.stderr)
+        sys.exit(1)
+    if not board_template.exists():
+        print(f"Error: board-template.md not found in {tmpl_dir}",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # ── Board: check emptiness and set up ──
+    if board.exists() and _board_has_headings(board):
+        print(
+            f"Error: board '{board}' is not empty (contains headings). "
+            "Cannot initialize a board that already has data.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # Copy board template to the board path
+    board.parent.mkdir(parents=True, exist_ok=True)
+    board.write_text(
+        board_template.read_text(encoding="utf-8"), encoding="utf-8",
+    )
 
     if not verify_kanban(board):
         print(
@@ -270,10 +313,6 @@ def cmd_init(args):
         )
         sys.exit(1)
 
-    if not template.exists():
-        print(f"Error: template not found: {template}", file=sys.stderr)
-        sys.exit(1)
-
     notes.mkdir(parents=True, exist_ok=True)
 
     base = cfg_path.parent
@@ -281,7 +320,7 @@ def cmd_init(args):
     cfg = {
         "board": os.path.relpath(str(board), str(base)),
         "notes_folder": os.path.relpath(str(notes), str(base)),
-        "template": os.path.relpath(str(template), str(base)),
+        "template": os.path.relpath(str(note_template), str(base)),
     }
     with open(cfg_path, "w", encoding="utf-8") as f:
         yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True)
@@ -571,8 +610,8 @@ def main():
                         help="Kanban board .md file")
     p_init.add_argument("--notes-folder", required=True,
                         help="Folder for companion notes")
-    p_init.add_argument("--template", required=True,
-                        help="Note template file")
+    p_init.add_argument("--template-dir", required=True,
+                        help="Directory containing note-template.md and board-template.md")
 
     # add-todo
     p_add = sub.add_parser("add-todo", help="Create a new to-do")

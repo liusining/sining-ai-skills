@@ -9,19 +9,20 @@ One-time setup for To-Do Accelerator. Required when `todo-accelerator-config.yam
    pip3 install PyYAML
    ```
 
-2. An **Obsidian Kanban board** — a `.md` file whose YAML frontmatter or settings block contains `kanban-plugin:`. If the board file lacks this identifier, the skill cannot be used.
+2. A **board file path** — the `.md` file that will serve as the Kanban board. The file can be empty or non-existent; the script will populate it from the board template. If the file already contains `##` headings, the script treats it as non-empty and refuses to initialize.
 
 ## Steps
 
 ### 1. Gather information from the user
 
-Ask the user for three paths:
+Ask the user for two paths:
 
 | Parameter | Description |
 |-----------|-------------|
-| **Board file** | The `.md` file used as the Kanban board |
+| **Board file** | The `.md` file to use as the Kanban board (will be created/populated if empty) |
 | **Notes folder** | Where companion note files should be stored |
-| **Template file** | The markdown template for new to-do notes |
+
+The template directory defaults to `<skill-dir>/assets/` which contains `note-template.md` and `board-template.md`.
 
 ### 2. Run init
 
@@ -31,13 +32,14 @@ python3 <skill-dir>/scripts/todo.py \
   init \
   --board "/absolute/path/to/board.md" \
   --notes-folder "/absolute/path/to/notes/" \
-  --template "/absolute/path/to/template.md"
+  --template-dir "<skill-dir>/assets"
 ```
 
 The script:
-- Validates the board contains `kanban-plugin:` identifier
+- Locates `note-template.md` and `board-template.md` in the template directory
+- Checks that the board file is empty (no `##` headings) — **errors if the board already contains data**
+- Copies the board template to the board file path
 - Creates the notes folder if it doesn't exist
-- Validates the template file exists
 - Writes `todo-accelerator-config.yaml` with relative paths
 - **Errors if a config file already exists at that path** — delete it first to reinitialize
 
@@ -53,9 +55,15 @@ Add the following instruction to your heartbeat configuration so that Agents aut
 
 > Call `work-on-todo` to pick up a pending to-do. Follow the returned prompt to process it. Upon completion or when encountering difficulties that prevent you from continuing, call `commit` to finalize the work.
 
-## Template Requirements
+## Template Directory Requirements
 
-The template file must contain these placeholders:
+The template directory must contain two files:
+
+### `board-template.md`
+An Obsidian Kanban board template with `kanban-plugin:` in its YAML frontmatter and the required `##` column headings (Ideas, 推进中, 审阅中, Done, Archive).
+
+### `note-template.md`
+Must contain these placeholders:
 - `{{targets}}` — replaced with YAML list items
 - `{{requirements}}` — replaced with markdown checklist items
 - `{{created_at}}` — replaced with ISO timestamp
