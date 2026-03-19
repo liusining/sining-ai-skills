@@ -32,8 +32,11 @@
 # 2. 查看可用插件和 marketplace 名称
 /plugin marketplace list
 
-# 3. 安装插件（替换为实际的插件名和 marketplace 名称）
-/plugin install <plugin-name>@<marketplace-name>
+# 3a. 安装所有插件
+/plugin install sining-ai-skills@liusining/sining-ai-skills
+
+# 3b. 或安装特定插件（替换为实际的插件名）
+/plugin install <plugin-name>@liusining/sining-ai-skills
 ```
 
 ### 关于 openclaw 目录
