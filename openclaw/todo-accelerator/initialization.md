@@ -50,9 +50,10 @@ If validation fails, inform the user and ask for corrected paths.
 
 If the command prints "Initialized: ..." — setup is complete.
 
-### 4. Add heartbeat activity
+### 4. Enable heartbeat and add activity
 
-Add the following instruction to your heartbeat configuration so that Agents automatically process to-do items:
+1. **Verify heartbeat is enabled** in the OpenClaw agent configuration. If it is not enabled, enable it — without heartbeat the agent will not automatically pick up to-do items.
+2. **Add the following instruction** to `HEARTBEAT.md` in the agent's workspace:
 
 > Call `work-on-todo` from the To-Do Accelerator skill to pick up a pending to-do. Follow the returned prompt and the skill's instructions to process it.
 
