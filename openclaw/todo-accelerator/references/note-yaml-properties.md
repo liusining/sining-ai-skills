@@ -8,4 +8,4 @@ Each to-do companion note has a YAML frontmatter block. Below are all properties
 | `iterate` | int | How many times this to-do has been worked on | `work-on-todo` (reads before incrementing) | `work-on-todo` (increments by 1) |
 | `iteration-started-at` | string | ISO timestamp of when the current iteration began | — | `work-on-todo` (set to current time) |
 | `created-at` | string | ISO timestamp of when the to-do was created | — | `add-todo` (set via template) |
-| `target` | list | Expected outcomes / deliverables | — | `add-todo --targets` (set via template) |
+| `target` | list | Expected outcomes / deliverables | `work-on-todo` (display) | `add-todo --targets` (set via template) |

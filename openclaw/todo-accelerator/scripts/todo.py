@@ -480,6 +480,15 @@ def cmd_work_on_todo(args, config):
     out.append(f"Iteration: {new_iterate}")
     out.append("")
 
+    targets = fm.get("target") or []
+    if isinstance(targets, str):
+        targets = [targets]
+    if targets:
+        out.append("### Expected Results")
+        for t in targets:
+            out.append(f"- {t}")
+        out.append("")
+
     out.append("### Unresolved Issues")
     for item in unchecked:
         out.append(f"- [ ] {item}")
@@ -493,9 +502,11 @@ def cmd_work_on_todo(args, config):
 
     inv_name = inv_heading or "Investigation and Problems"
     if inv_lines:
-        out.append(f"### Previous Findings ({inv_name})")
-        for ln in inv_lines:
-            out.append(ln)
+        out.append(
+            f"Previous findings are in the \"{inv_name}\" section of the note. "
+            "Review before starting; record any new discoveries in the same section. "
+            "Keep entries concise — facts and conclusions only, no filler."
+        )
         out.append("")
 
     print("\n".join(out))

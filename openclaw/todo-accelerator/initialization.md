@@ -54,7 +54,7 @@ If the command prints "Initialized: ..." — setup is complete.
 
 Add the following instruction to your heartbeat configuration so that Agents automatically process to-do items:
 
-> Call `work-on-todo` to pick up a pending to-do. Follow the returned prompt to process it. Upon completion or when encountering difficulties that prevent you from continuing, call `commit` to finalize the work.
+> Call `work-on-todo` from the To-Do Accelerator skill to pick up a pending to-do. Follow the returned prompt and the skill's instructions to process it.
 
 ## Template Directory Requirements
 
