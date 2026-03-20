@@ -2,7 +2,7 @@
 
 These examples demonstrate the full lifecycle using the [AutoResearch](https://github.com/karpathy/autoresearch) project as the scenario.
 
-`<CMD>` = `python3 <skill-dir>/scripts/todo.py --config <skill-dir>/todo-accelerator-config.yaml`
+`<CMD>` = `python3 <skill-dir>/scripts/todo.py --config <workspace>/todo-accelerator-config.yaml`
 
 ---
 

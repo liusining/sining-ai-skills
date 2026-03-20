@@ -1,6 +1,6 @@
 # Initialization
 
-One-time setup for To-Do Accelerator. Required when `todo-accelerator-config.yaml` does not exist in this skill's directory.
+One-time setup for To-Do Accelerator. Required when `todo-accelerator-config.yaml` does not exist in the agent's workspace.
 
 ## Prerequisites
 
@@ -15,10 +15,11 @@ One-time setup for To-Do Accelerator. Required when `todo-accelerator-config.yam
 
 ### 1. Gather information from the user
 
-Ask the user for two paths:
+Ask the user for three paths:
 
 | Parameter | Description |
 |-----------|-------------|
+| **Config file** | Where to write `todo-accelerator-config.yaml` — must be inside the agent's workspace, **not** inside the skill directory (skill updates may overwrite it) |
 | **Board file** | The `.md` file to use as the Kanban board (will be created/populated if empty) |
 | **Notes folder** | Where companion note files should be stored |
 
@@ -28,7 +29,7 @@ The template directory defaults to `<skill-dir>/assets/` which contains `note-te
 
 ```bash
 python3 <skill-dir>/scripts/todo.py \
-  --config <skill-dir>/todo-accelerator-config.yaml \
+  --config <workspace>/todo-accelerator-config.yaml \
   init \
   --board "/absolute/path/to/board.md" \
   --notes-folder "/absolute/path/to/notes/" \
@@ -40,7 +41,7 @@ The script:
 - Checks that the board file is empty (no `##` headings) — **errors if the board already contains data**
 - Copies the board template to the board file path
 - Creates the notes folder if it doesn't exist
-- Writes `todo-accelerator-config.yaml` with relative paths
+- Writes `todo-accelerator-config.yaml` to the specified workspace path with relative paths
 - **Errors if a config file already exists at that path** — delete it first to reinitialize
 
 If validation fails, inform the user and ask for corrected paths.

@@ -9,7 +9,7 @@ Collaborative task management between users and AI Agents. Agents pick up tasks,
 
 ## Setup
 
-**Check:** If `todo-accelerator-config.yaml` exists in this skill's directory → ready to use. If not → follow `initialization.md` in this directory (one-time process).
+**Check:** If `todo-accelerator-config.yaml` exists in the agent's workspace → ready to use. If not → follow `initialization.md` in this directory (one-time process).
 
 ## Working Scenarios
 
@@ -24,10 +24,10 @@ Collaborative task management between users and AI Agents. Agents pick up tasks,
 **Base command** (referred to as `<CMD>` below):
 
 ```
-python3 <skill-dir>/scripts/todo.py --config <skill-dir>/todo-accelerator-config.yaml
+python3 <skill-dir>/scripts/todo.py --config <workspace>/todo-accelerator-config.yaml
 ```
 
-Replace `<skill-dir>` with the absolute path to this skill's directory.
+Replace `<skill-dir>` with the absolute path to this skill's directory, and `<workspace>` with the agent's workspace directory.
 
 ### add-todo
 
