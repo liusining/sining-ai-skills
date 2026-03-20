@@ -50,13 +50,16 @@ The script selects "Research AutoResearch" (highest priority), moves it from Ide
 Note: /path/to/TODOs/Research AutoResearch.md
 Iteration: 1
 
+### Expected Results
+- Summary of features and setup guide
+
 ### Unresolved Issues
 - [ ] Read the README thoroughly
 - [ ] Try running the demo
 - [ ] Write up findings
 ```
 
-The agent follows the "Processing work-on-todo Output" instructions from SKILL.md. It reads the README, documents findings in the "Investigation and Problems" section, and records preliminary results in the "Target" section.
+The agent follows the returned prompt and the skill's instructions — especially `references/processing-work-on-todo.md`. It reads the README, records concise findings in the "Investigation and Problems" section of the note, and writes preliminary results in the "Target" section.
 
 When done (or when stuck), the agent calls commit with the requirements it completed:
 
@@ -107,14 +110,16 @@ When done (or when stuck), the agent calls commit with the requirements it compl
 Note: /path/to/TODOs/Research AutoResearch.md
 Iteration: 2
 
+### Expected Results
+- Summary of features and setup guide
+
 ### Unresolved Issues
 - [ ] Write up findings
 
 ### Previous Results
 Preliminary feature summary documented.
 
-### Previous Findings (Investigation and Problems)
-README covers installation via pip, requires Python 3.10+. Demo ran successfully...
+Previous findings are in the "Investigation and Problems" section of the note. Review before starting; record any new discoveries in the same section. Keep entries concise — facts and conclusions only, no filler.
 ```
 
 The agent writes up the final findings, then commits:
