@@ -15,7 +15,7 @@ import os
 import random
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -355,7 +355,7 @@ def cmd_add_todo(args, config):
 
     targets_yaml = "\n".join(f"  - {t}" for t in targets)
     reqs_md = "\n".join(f"- [ ] {r}" for r in reqs)
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
 
     content = template
     content = content.replace("{{targets}}", targets_yaml)
@@ -466,7 +466,7 @@ def cmd_work_on_todo(args, config):
 
     # ── Update frontmatter: increment iterate, set iteration-started-at ──
     new_iterate = (fm.get("iterate", 0) or 0) + 1
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
     update_note_frontmatter(note_path, {
         "iterate": new_iterate,
         "iteration-started-at": now,

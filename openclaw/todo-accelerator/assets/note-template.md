@@ -4,7 +4,7 @@ priority: 0
 subagent: ""
 target:
 {{targets}}
-iteration-started-at: 1970-01-01T00:00:00
+iteration-started-at: 1970-01-01T00:00:00+0000
 created-at: {{created_at}}
 ---
 
