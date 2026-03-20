@@ -377,6 +377,8 @@ def cmd_add_todo(args, config):
         fm_updates["priority"] = args.priority
     if args.allow_subagent is not None:
         fm_updates["allow-subagent"] = args.allow_subagent
+    if args.assigned_agent is not None:
+        fm_updates["assigned-agent"] = args.assigned_agent
     if fm_updates:
         update_note_frontmatter(note_path, fm_updates)
 
@@ -514,8 +516,18 @@ def cmd_work_on_todo(args, config):
         )
         out.append("")
 
+    assigned_agent = fm.get("assigned-agent")
+    if assigned_agent:
+        out.insert(0, (
+            f"⚠️ DELEGATION REQUIRED: This to-do is assigned to agent "
+            f"\"{assigned_agent}\". Notify agent \"{assigned_agent}\" and "
+            f"pass the task details below to it. The agent must follow the "
+            f"todo-accelerator skill workflow to process this to-do."
+        ))
+        out.insert(1, "")
+
     allow_subagent = fm.get("allow-subagent", True)
-    if allow_subagent:
+    if allow_subagent and not assigned_agent:
         out.append(
             "You are permitted to delegate this task to a subagent. "
             "The choice of model is at your discretion."
@@ -648,6 +660,8 @@ def main():
     p_add.add_argument("--allow-subagent", action=argparse.BooleanOptionalAction,
                        default=None,
                        help="Allow subagent delegation (default: true in template)")
+    p_add.add_argument("--assigned-agent", default=None,
+                       help="Agent ID that must handle this to-do (delegates instead of self-processing)")
 
     # work-on-todo
     p_work = sub.add_parser("work-on-todo", help="Pick up a to-do")

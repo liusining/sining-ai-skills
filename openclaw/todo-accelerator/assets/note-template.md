@@ -2,6 +2,7 @@
 iterate: 0
 priority: 0
 allow-subagent: true
+assigned-agent:
 target:
 {{targets}}
 iteration-started-at: 1970-01-01T00:00:00+0000
