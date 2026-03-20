@@ -34,7 +34,7 @@ Replace `<skill-dir>` with the absolute path to this skill's directory, and `<wo
 Create a new to-do with a companion note, added under "Ideas".
 
 ```bash
-<CMD> add-todo --name "title" [--targets "outcome1" "outcome2"] [--requirements "req1" "req2"] [--priority N]
+<CMD> add-todo --name "title" [--targets "outcome1" "outcome2"] [--requirements "req1" "req2"] [--priority N] [--subagent "model"]
 ```
 
 **Example:**

@@ -371,9 +371,14 @@ def cmd_add_todo(args, config):
         note_path.write_text(content, encoding="utf-8")
         print(f"Created note: {note_path}")
 
-    # Set priority if specified
+    # Set priority and subagent if specified
+    fm_updates = {}
     if args.priority and args.priority != 0:
-        update_note_frontmatter(note_path, {"priority": args.priority})
+        fm_updates["priority"] = args.priority
+    if args.subagent:
+        fm_updates["subagent"] = args.subagent
+    if fm_updates:
+        update_note_frontmatter(note_path, fm_updates)
 
     # Insert card under Ideas
     lines = board_path.read_text(encoding="utf-8").splitlines(keepends=True)
@@ -509,6 +514,13 @@ def cmd_work_on_todo(args, config):
         )
         out.append("")
 
+    subagent = str(fm.get("subagent") or "").strip()
+    if subagent:
+        out.append(
+            f"Delegate this task to a subagent using the **{subagent}** model."
+        )
+        out.append("")
+
     print("\n".join(out))
 
 
@@ -632,6 +644,8 @@ def main():
                        help="Requirements / questions")
     p_add.add_argument("--priority", type=int, default=0,
                        help="Priority level (0=normal, higher=more urgent)")
+    p_add.add_argument("--subagent", default="",
+                       help="Model name for subagent delegation (empty = handle directly)")
 
     # work-on-todo
     p_work = sub.add_parser("work-on-todo", help="Pick up a to-do")
