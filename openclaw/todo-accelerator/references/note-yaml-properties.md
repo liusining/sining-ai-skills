@@ -8,5 +8,5 @@ Each to-do companion note has a YAML frontmatter block. Below are all properties
 | `iterate` | int | How many times this to-do has been worked on | `work-on-todo` (reads before incrementing) | `work-on-todo` (increments by 1) |
 | `iteration-started-at` | string | ISO timestamp of when the current iteration began | — | `work-on-todo` (set to current time) |
 | `created-at` | string | ISO timestamp of when the to-do was created | — | `add-todo` (set via template) |
-| `subagent` | string | Model name for subagent delegation (empty = handle directly) | `work-on-todo` (instruction) | `add-todo --subagent` (set via template) |
+| `allow-subagent` | bool | Whether the agent may delegate to a subagent (true = allowed, model choice is up to the agent) | `work-on-todo` (instruction) | `add-todo --allow-subagent` (set via template) |
 | `target` | list | Expected outcomes / deliverables | `work-on-todo` (display) | `add-todo --targets` (set via template) |

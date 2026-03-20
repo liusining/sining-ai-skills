@@ -375,8 +375,8 @@ def cmd_add_todo(args, config):
     fm_updates = {}
     if args.priority and args.priority != 0:
         fm_updates["priority"] = args.priority
-    if args.subagent:
-        fm_updates["subagent"] = args.subagent
+    if args.allow_subagent is not None:
+        fm_updates["allow-subagent"] = args.allow_subagent
     if fm_updates:
         update_note_frontmatter(note_path, fm_updates)
 
@@ -514,10 +514,11 @@ def cmd_work_on_todo(args, config):
         )
         out.append("")
 
-    subagent = str(fm.get("subagent") or "").strip()
-    if subagent:
+    allow_subagent = fm.get("allow-subagent", True)
+    if allow_subagent:
         out.append(
-            f"Delegate this task to a subagent using the **{subagent}** model."
+            "You are permitted to delegate this task to a subagent. "
+            "The choice of model is at your discretion."
         )
         out.append("")
 
@@ -644,8 +645,9 @@ def main():
                        help="Requirements / questions")
     p_add.add_argument("--priority", type=int, default=0,
                        help="Priority level (0=normal, higher=more urgent)")
-    p_add.add_argument("--subagent", default="",
-                       help="Model name for subagent delegation (empty = handle directly)")
+    p_add.add_argument("--allow-subagent", action=argparse.BooleanOptionalAction,
+                       default=None,
+                       help="Allow subagent delegation (default: true in template)")
 
     # work-on-todo
     p_work = sub.add_parser("work-on-todo", help="Pick up a to-do")
