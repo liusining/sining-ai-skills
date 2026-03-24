@@ -8,6 +8,7 @@ Subcommands:
   work-on-todo Pick up a to-do by priority for processing
   commit       Check off completed requirements and finalize
   list-pending List all pending to-dos
+  organize     Sort files into cards/ and targets/ subfolders
 """
 
 import argparse
@@ -630,6 +631,81 @@ def cmd_list_pending(args, config):
         print(f"  - {card['name']} (priority: {priority})")
 
 
+# ── cmd: organize ────────────────────────────────────────────────────
+
+def cmd_organize(args, config):
+    """Sort .md files in the board directory into cards/ and targets/ subfolders.
+
+    Classification rules:
+    - Files with YAML frontmatter containing 'kanban-plugin' → skip (board file)
+    - Files with YAML frontmatter containing 'iterate' → card (to-do note)
+    - All other .md files → target (deliverable/output document)
+    """
+    board_path = config["board"]
+    board_dir = board_path.parent
+
+    cards_dir = board_dir / "cards"
+    targets_dir = board_dir / "targets"
+    cards_dir.mkdir(exist_ok=True)
+    targets_dir.mkdir(exist_ok=True)
+
+    moved_cards = []
+    moved_targets = []
+    skipped = []
+
+    for md_file in sorted(board_dir.glob("*.md")):
+        if md_file.name == board_path.name:
+            skipped.append((md_file.name, "board file"))
+            continue
+
+        # Parse YAML frontmatter
+        raw = md_file.read_text(encoding="utf-8")
+        fm = {}
+        parts = raw.split("---", 2)
+        if len(parts) >= 3 and parts[0].strip() == "":
+            try:
+                fm = yaml.safe_load(parts[1]) or {}
+            except yaml.YAMLError:
+                fm = {}
+
+        # Skip kanban board files
+        if "kanban-plugin" in fm:
+            skipped.append((md_file.name, "kanban board"))
+            continue
+
+        # Classify
+        if "iterate" in fm:
+            dest = cards_dir / md_file.name
+            if dest.exists():
+                skipped.append((md_file.name, "already in cards/"))
+                continue
+            md_file.rename(dest)
+            moved_cards.append(md_file.name)
+        else:
+            dest = targets_dir / md_file.name
+            if dest.exists():
+                skipped.append((md_file.name, "already in targets/"))
+                continue
+            md_file.rename(dest)
+            moved_targets.append(md_file.name)
+
+    # Report
+    if moved_cards:
+        print(f"Moved to cards/ ({len(moved_cards)}):")
+        for name in moved_cards:
+            print(f"  → {name}")
+    if moved_targets:
+        print(f"Moved to targets/ ({len(moved_targets)}):")
+        for name in moved_targets:
+            print(f"  → {name}")
+    if not moved_cards and not moved_targets:
+        print("Nothing to organize — all files already sorted.")
+    if skipped:
+        print(f"Skipped ({len(skipped)}):")
+        for name, reason in skipped:
+            print(f"  ⊘ {name} ({reason})")
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -676,6 +752,9 @@ def main():
     # list-pending
     sub.add_parser("list-pending", help="List pending to-dos in Ideas")
 
+    # organize
+    sub.add_parser("organize", help="Sort files into cards/ and targets/ subfolders")
+
     args = parser.parse_args()
 
     if args.command == "init":
@@ -690,6 +769,8 @@ def main():
             cmd_commit(args, config)
         elif args.command == "list-pending":
             cmd_list_pending(args, config)
+        elif args.command == "organize":
+            cmd_organize(args, config)
 
 
 if __name__ == "__main__":

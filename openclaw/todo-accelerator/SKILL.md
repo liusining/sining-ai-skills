@@ -97,11 +97,20 @@ List all to-dos under "Ideas" with their priority levels.
 <CMD> list-pending
 ```
 
-**Example:**
+### organize
+
+Sort `.md` files in the board directory into `cards/` and `targets/` subfolders.
 
 ```bash
-<CMD> list-pending
+<CMD> organize
 ```
+
+**Classification rules:**
+- Files with YAML frontmatter containing `kanban-plugin` → skipped (board files)
+- Files with YAML frontmatter containing `iterate` → moved to `cards/` (to-do notes)
+- All other `.md` files → moved to `targets/` (deliverable/output documents)
+- The board file itself (e.g. `0-BOARD.md`) is always skipped
+- Files already in the correct subfolder are skipped
 
 ## Note Structure
 
