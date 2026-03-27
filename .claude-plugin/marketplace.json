@@ -8,9 +8,22 @@
   },
   "plugins": [
     {
+      "name": "todo-accelerator",
+      "description": "Collaborative task management via Obsidian Kanban board",
+      "source": "./todo-accelerator",
+      "category": "productivity"
+    },
+    {
       "name": "snell-surge-deploy",
+      "description": "Deploy Snell proxy server on a Linux VPS and configure a local Surge profile to connect through it",
       "source": "./snell-surge-deploy",
-      "description": "Deploy Snell proxy server on a Linux VPS and configure a local Surge profile to connect through it."
+      "category": "development"
+    },
+    {
+      "name": "weflow-group-summarizer",
+      "description": "Summarize WeFlow group chat messages",
+      "source": "./weflow-group-summarizer",
+      "category": "productivity"
     }
   ]
 }

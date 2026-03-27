@@ -9,5 +9,5 @@ Each to-do companion note has a YAML frontmatter block. Below are all properties
 | `iteration-started-at` | string | ISO timestamp of when the current iteration began | — | `work-on-todo` (set to current time) |
 | `created-at` | string | ISO timestamp of when the to-do was created | — | `add-todo` (set via template) |
 | `allow-subagent` | bool | Whether the agent may delegate to a subagent (true = allowed, model choice is up to the agent) | `work-on-todo` (instruction) | `add-todo --allow-subagent` (set via template) |
-| `assigned-agent` | string | Agent ID that must handle this to-do. When set, the managing agent delegates to the specified agent instead of self-processing | `work-on-todo` (delegation instruction) | `add-todo --assigned-agent` (set via template) |
+| `assigned-agent` | string | Agent name that owns this to-do. Defaults to `$AGENT_ID`. Each agent only processes to-dos assigned to itself | `work-on-todo` (filtering), `list-pending` (filtering) | `add-todo` (defaults to `$AGENT_ID`) |
 | `target` | list | Expected outcomes / deliverables | `work-on-todo` (display) | `add-todo --targets` (set via template) |

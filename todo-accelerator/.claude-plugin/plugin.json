@@ -1,0 +1,6 @@
+{
+  "name": "todo-accelerator",
+  "description": "Collaborative task management via Obsidian Kanban board",
+  "version": "0.2.0",
+  "author": {"name": "Sining Liu"}
+}

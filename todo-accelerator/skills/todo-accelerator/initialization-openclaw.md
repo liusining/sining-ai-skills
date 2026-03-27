@@ -53,9 +53,13 @@ If the command prints "Initialized: ..." — setup is complete.
 ### 4. Enable heartbeat and add activity
 
 1. **Verify heartbeat is enabled** in the OpenClaw agent configuration. If it is not enabled, enable it — without heartbeat the agent will not automatically pick up to-do items.
-2. **Add the following instruction** to `HEARTBEAT.md` in the agent's workspace:
+2. **Add the following command** to `HEARTBEAT.md` in the agent's workspace (replace `<agent-name>` with this agent's name):
 
-> Call `work-on-todo` from the To-Do Accelerator skill to pick up a pending to-do. Follow the returned prompt and the skill's instructions to process it.
+```bash
+AGENT_ID=<agent-name> python3 <skill-dir>/scripts/todo.py --config <workspace>/todo-accelerator-config.yaml work-on-todo
+```
+
+`AGENT_ID` identifies the current agent. The script only picks up to-dos assigned to this agent. Follow the returned prompt and the skill's instructions to process it.
 
 ## Template Directory Requirements
 

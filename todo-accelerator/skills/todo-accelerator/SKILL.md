@@ -1,6 +1,6 @@
 ---
 name: todo-accelerator
-description: Use when a user needs to add a new task or record a pending to-do item; when prompting an Agent to execute a pending task; during Agent heartbeat events to pick up and work on tasks; when a user expresses interest in a topic for later research, saves a bookmark for processing, or asks for help preparing deliverables. Not for reminders (eating, sleeping, meetings).
+description: Use when a user needs to add a new task or record a pending to-do item; when prompting an Agent to execute a pending task; during scheduled periodic checks to pick up and work on tasks; when a user expresses interest in a topic for later research, saves a bookmark for processing, or asks for help preparing deliverables. Not for reminders (eating, sleeping, meetings).
 ---
 
 # To-Do Accelerator
@@ -9,14 +9,16 @@ Collaborative task management between users and AI Agents. Agents pick up tasks,
 
 ## Setup
 
-**Check:** If `todo-accelerator-config.yaml` exists in the agent's workspace → ready to use. If not → follow `initialization.md` in this directory (one-time process).
+**Check:** If `todo-accelerator-config.yaml` exists (in working directory or `~/.config/todo-accelerator/`) → ready to use. If not → follow the platform-specific initialization guide:
+- **OpenClaw:** `initialization-openclaw.md`
+- **Claude Code:** `initialization-claude-code.md`
 
 ## Working Scenarios
 
 | Scenario | Agent Action |
 |----------|-------------|
 | User describes a new task or bookmarks a topic | Ask for missing details (targets, requirements, priority) → `add-todo` |
-| Agent heartbeat event | Call `work-on-todo` → process the returned prompt → `commit` when done or blocked |
+| Scheduled periodic check | Call `work-on-todo` → process the returned prompt → `commit` when done or blocked |
 | User asks to handle a specific task | Call `list-pending` → confirm with user → `work-on-todo --name "..."` → `commit` |
 
 ## Commands
@@ -27,15 +29,17 @@ Collaborative task management between users and AI Agents. Agents pick up tasks,
 python3 <skill-dir>/scripts/todo.py --config <workspace>/todo-accelerator-config.yaml
 ```
 
-Replace `<skill-dir>` with the absolute path to this skill's directory, and `<workspace>` with the agent's workspace directory.
+Replace `<skill-dir>` with the absolute path to this skill's directory, and `<workspace>` with the working directory where config is stored.
 
 ### add-todo
 
 Create a new to-do with a companion note, added under "Ideas".
 
 ```bash
-<CMD> add-todo --name "title" [--targets "outcome1" "outcome2"] [--requirements "req1" "req2"] [--priority N] [--allow-subagent | --no-allow-subagent] [--assigned-agent "agent-id"]
+<CMD> add-todo --name "title" [--targets "outcome1" "outcome2"] [--requirements "req1" "req2"] [--priority N] [--allow-subagent | --no-allow-subagent] [--assigned-agent "agent-name"]
 ```
+
+`--assigned-agent` defaults to the `$AGENT_ID` environment variable. If neither is set, the command fails. To assign a task to another agent, pass their name explicitly.
 
 **Example:**
 
@@ -64,6 +68,7 @@ Pick up the highest-priority to-do from Ideas and prepare it for processing.
 ```
 
 **Behavior:**
+- Only selects to-dos whose `assigned-agent` matches `$AGENT_ID`
 - Without `--name`: auto-selects by priority (highest first, random among ties)
 - With `--name`: works on that specific to-do (confirm exact name with user first)
 - If the selected to-do has no unchecked requirements → moves it to 审阅中 and skips (no action needed)
@@ -87,15 +92,26 @@ Check off completed requirements and finalize the current round of work.
 
 Each `--completed` string must **exactly match** an unchecked requirement in the note's "What's More" section. If any string doesn't match, the script returns an error with the remaining unchecked requirements — re-examine and pass the exact strings.
 
-The script moves the card to 审阅中 after committing.
+The script moves the card to 审阅中 after committing. Therefore, commit all completed requirements in a **single call** — splitting into multiple commits would move the card prematurely. Copy requirement strings verbatim from the `work-on-todo` output, including any `[[wikilinks]]`.
 
 ### list-pending
 
-List all to-dos under "Ideas" with their priority levels.
+List to-dos under "Ideas". By default, shows only to-dos assigned to the current agent (`$AGENT_ID`). Pass `--all` to see all agents' to-dos with assignment info.
 
 ```bash
 <CMD> list-pending
+<CMD> list-pending --all
 ```
+
+### remove-todo
+
+Remove a to-do from Ideas and delete its companion note. Only tasks in Ideas can be removed — tasks in other columns are protected.
+
+```bash
+<CMD> remove-todo --name "todo name"
+```
+
+Use `list-pending --all` to find the exact name before removing.
 
 ### organize
 
@@ -121,6 +137,14 @@ Each to-do has a companion `.md` note. For YAML frontmatter properties, see `ref
 | **What's More** | Requirements checklist (`- [ ]` / `- [x]`) | Managed via `commit` command |
 | **Target** | Final results and deliverables | Write directly in the note |
 | **Investigation and Problems** | Ongoing findings, progress notes, obstacles | Write directly in the note |
+
+## Common Issues
+
+**Task in 推进中 can't be picked up:** `work-on-todo` only picks from Ideas. If a task is stuck in 推进中, inform the user — they will move it back to Ideas when ready.
+
+**list-pending shows empty but board has tasks:** Tasks are filtered by `$AGENT_ID`. Other agents' tasks will not appear and you must not work on them. Run `list-pending --all` to confirm the board is not empty, then inform the user that the visible tasks belong to other agents.
+
+**Adding requirements to an existing task:** Edit the note's "What's More" section directly — add `- [ ] new requirement` lines.
 
 ## Case Studies
 

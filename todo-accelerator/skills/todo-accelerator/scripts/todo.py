@@ -42,11 +42,28 @@ def load_config(config_path: str) -> dict:
         if key not in raw:
             print(f"Error: missing '{key}' in config", file=sys.stderr)
             sys.exit(1)
+    notes_folder = (base / raw["notes_folder"]).resolve()
     return {
         "board": (base / raw["board"]).resolve(),
-        "notes_folder": (base / raw["notes_folder"]).resolve(),
+        "notes_folder": notes_folder,
+        "cards_folder": notes_folder / "cards",
         "template": (base / raw["template"]).resolve(),
     }
+
+
+def get_agent_id(explicit: str | None = None) -> str:
+    """Resolve agent ID: explicit arg > AGENT_ID env var > error."""
+    if explicit:
+        return explicit
+    env_id = os.environ.get("AGENT_ID")
+    if env_id:
+        return env_id
+    print(
+        "Error: agent identity not set. Either pass --assigned-agent or "
+        "set the AGENT_ID environment variable.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 
 def verify_kanban(board_path: Path) -> bool:
@@ -337,7 +354,7 @@ def cmd_init(args):
 def cmd_add_todo(args, config):
     """Create a new to-do: companion note + card in Ideas."""
     board_path = config["board"]
-    notes_dir = config["notes_folder"]
+    notes_dir = config["cards_folder"]
     tmpl_path = config["template"]
     name = args.name
 
@@ -347,6 +364,9 @@ def cmd_add_todo(args, config):
     if not tmpl_path.exists():
         print(f"Error: template not found: {tmpl_path}", file=sys.stderr)
         sys.exit(1)
+
+    # Resolve agent identity early, before creating any files
+    agent_id = get_agent_id(args.assigned_agent)
 
     template = tmpl_path.read_text(encoding="utf-8")
 
@@ -372,14 +392,13 @@ def cmd_add_todo(args, config):
         note_path.write_text(content, encoding="utf-8")
         print(f"Created note: {note_path}")
 
-    # Set priority and subagent if specified
+    # Set priority, subagent, and assigned-agent
     fm_updates = {}
     if args.priority and args.priority != 0:
         fm_updates["priority"] = args.priority
     if args.allow_subagent is not None:
         fm_updates["allow-subagent"] = args.allow_subagent
-    if args.assigned_agent is not None:
-        fm_updates["assigned-agent"] = args.assigned_agent
+    fm_updates["assigned-agent"] = agent_id
     if fm_updates:
         update_note_frontmatter(note_path, fm_updates)
 
@@ -409,7 +428,14 @@ def cmd_add_todo(args, config):
 def cmd_work_on_todo(args, config):
     """Select a to-do from Ideas by priority, prepare for processing."""
     board_path = config["board"]
-    notes_dir = config["notes_folder"]
+    notes_dir = config["cards_folder"]
+
+    my_id = os.environ.get("AGENT_ID")
+    if not my_id:
+        print("Error: AGENT_ID environment variable not set. "
+              "Cannot determine which to-dos belong to this agent.",
+              file=sys.stderr)
+        sys.exit(1)
 
     if not board_path.exists():
         print(f"Error: board not found: {board_path}", file=sys.stderr)
@@ -417,14 +443,18 @@ def cmd_work_on_todo(args, config):
 
     lines = board_path.read_text(encoding="utf-8").splitlines()
 
-    # ── Only select from Ideas ──
+    # ── Only select from Ideas, filtered by assigned-agent ──
     candidates = []
     for card in cards_in_heading(lines, "Ideas"):
         note_path = notes_dir / f"{card['name']}.md"
         priority = 0
+        assigned_agent = None
         if note_path.exists():
             fm, _ = parse_note(note_path)
             priority = fm.get("priority", 0) or 0
+            assigned_agent = fm.get("assigned-agent")
+        if assigned_agent != my_id:
+            continue
         candidates.append({
             "name": card["name"],
             "priority": priority,
@@ -517,20 +547,11 @@ def cmd_work_on_todo(args, config):
         )
         out.append("")
 
-    assigned_agent = fm.get("assigned-agent")
-    if assigned_agent:
-        out.insert(0, (
-            f"⚠️ DELEGATION REQUIRED: This to-do is assigned to agent "
-            f"\"{assigned_agent}\". Notify agent \"{assigned_agent}\" and "
-            f"pass the task details below to it. The agent must follow the "
-            f"todo-accelerator skill workflow to process this to-do."
-        ))
-        out.insert(1, "")
-
     allow_subagent = fm.get("allow-subagent", True)
-    if allow_subagent and not assigned_agent:
+    if allow_subagent:
         out.append(
-            "You are permitted to delegate this task to a subagent. "
+            "You are encouraged to use subagents to improve work efficiency. "
+            "Run them asynchronously if possible, so the main session stays free for conversation. "
             "The choice of model is at your discretion."
         )
         out.append("")
@@ -542,7 +563,7 @@ def cmd_work_on_todo(args, config):
 
 def cmd_commit(args, config):
     """Check off completed requirements and move card to 审阅中."""
-    notes_dir = config["notes_folder"]
+    notes_dir = config["cards_folder"]
     board_path = config["board"]
     name = args.name
     completed = args.completed or []
@@ -606,9 +627,17 @@ def cmd_commit(args, config):
 # ── cmd: list-pending ────────────────────────────────────────────────
 
 def cmd_list_pending(args, config):
-    """List all pending to-dos under Ideas."""
+    """List pending to-dos under Ideas, filtered by agent."""
     board_path = config["board"]
-    notes_dir = config["notes_folder"]
+    notes_dir = config["cards_folder"]
+    show_all = args.all
+
+    my_id = os.environ.get("AGENT_ID")
+    if not show_all and not my_id:
+        print("Error: AGENT_ID environment variable not set. "
+              "Use --all to list all to-dos, or set AGENT_ID.",
+              file=sys.stderr)
+        sys.exit(1)
 
     if not board_path.exists():
         print(f"Error: board not found: {board_path}", file=sys.stderr)
@@ -621,14 +650,78 @@ def cmd_list_pending(args, config):
         print("No pending to-dos in Ideas.")
         return
 
-    print("Pending to-dos (Ideas):")
+    filtered = []
     for card in cards:
         note_path = notes_dir / f"{card['name']}.md"
         priority = 0
+        assigned_agent = None
         if note_path.exists():
             fm, _ = parse_note(note_path)
             priority = fm.get("priority", 0) or 0
-        print(f"  - {card['name']} (priority: {priority})")
+            assigned_agent = fm.get("assigned-agent") or ""
+        if not show_all and assigned_agent != my_id:
+            continue
+        filtered.append({
+            "name": card["name"],
+            "priority": priority,
+            "assigned_agent": assigned_agent,
+        })
+
+    if not filtered:
+        if show_all:
+            print("No pending to-dos in Ideas.")
+        else:
+            print(f"No pending to-dos assigned to {my_id} in Ideas.")
+        return
+
+    if show_all:
+        print("All pending to-dos (Ideas):")
+        for item in filtered:
+            agent_info = (f" [→ {item['assigned_agent']}]"
+                          if item["assigned_agent"] else " [unassigned]")
+            print(f"  - {item['name']} (priority: {item['priority']}){agent_info}")
+    else:
+        print(f"Pending to-dos for {my_id} (Ideas):")
+        for item in filtered:
+            print(f"  - {item['name']} (priority: {item['priority']})")
+
+
+# ── cmd: remove-todo ─────────────────────────────────────────────────
+
+def cmd_remove_todo(args, config):
+    """Remove a to-do: delete card from board and companion note."""
+    board_path = config["board"]
+    notes_dir = config["cards_folder"]
+    name = args.name
+
+    if not board_path.exists():
+        print(f"Error: board not found: {board_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # Only allow removal from Ideas — active/reviewed/done tasks are protected
+    heading = find_card_heading(board_path, name, ["Ideas"])
+    if heading is None:
+        print(f"Error: [[{name}]] not found under Ideas. "
+              "Only to-dos in Ideas can be removed.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Remove card from board
+    lines = board_path.read_text(encoding="utf-8").splitlines()
+    card_pat = re.compile(
+        r"^- \[[ x]\] \[\[" + re.escape(name) + r"\]\]"
+    )
+    lines = [ln for ln in lines if not card_pat.match(ln.strip())]
+    board_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Removed [[{name}]] from {heading}.")
+
+    # Delete companion note
+    note_path = notes_dir / f"{name}.md"
+    if note_path.exists():
+        note_path.unlink()
+        print(f"Deleted note: {note_path}")
+    else:
+        print(f"Note not found (skipped): {note_path}")
 
 
 # ── cmd: organize ────────────────────────────────────────────────────
@@ -750,7 +843,13 @@ def main():
                           help="Completed requirement strings (exact match)")
 
     # list-pending
-    sub.add_parser("list-pending", help="List pending to-dos in Ideas")
+    p_list = sub.add_parser("list-pending", help="List pending to-dos in Ideas")
+    p_list.add_argument("--all", action="store_true",
+                        help="List all agents' to-dos, not just mine")
+
+    # remove-todo
+    p_remove = sub.add_parser("remove-todo", help="Remove a to-do and its note")
+    p_remove.add_argument("--name", required=True, help="To-do name to remove")
 
     # organize
     sub.add_parser("organize", help="Sort files into cards/ and targets/ subfolders")
@@ -769,6 +868,8 @@ def main():
             cmd_commit(args, config)
         elif args.command == "list-pending":
             cmd_list_pending(args, config)
+        elif args.command == "remove-todo":
+            cmd_remove_todo(args, config)
         elif args.command == "organize":
             cmd_organize(args, config)
 

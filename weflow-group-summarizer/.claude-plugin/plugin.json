@@ -1,0 +1,6 @@
+{
+  "name": "weflow-group-summarizer",
+  "description": "Summarize WeFlow group chat messages",
+  "version": "0.1.0",
+  "author": {"name": "Sining Liu"}
+}
