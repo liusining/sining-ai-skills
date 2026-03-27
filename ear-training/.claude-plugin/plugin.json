@@ -1,0 +1,6 @@
+{
+  "name": "ear-training",
+  "description": "Interactive ear training for musical interval recognition",
+  "version": "0.1.0",
+  "author": {"name": "Sining Liu"}
+}
